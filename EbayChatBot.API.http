@@ -1,0 +1,6 @@
+@EbayChatBot.API_HostAddress = http://localhost:5088
+
+GET {{EbayChatBot.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
