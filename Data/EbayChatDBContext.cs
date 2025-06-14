@@ -21,7 +21,7 @@ namespace EbayChatBot.API.Data
         public DbSet<MessageTemplate> MessageTemplates { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<EbayToken> EbayTokens { get; set; }
-
+        public DbSet<ChatMessage> ChatMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -116,6 +116,44 @@ namespace EbayChatBot.API.Data
                 .WithMany()
                 .HasForeignKey(mt => mt.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ChatMessage>()
+        .Property(m => m.SenderType)
+        .HasConversion<string>();
+
+            modelBuilder.Entity<ChatMessage>()
+                .Property(m => m.ReceiverType)
+                .HasConversion<string>();
+
+            // Relationships for Sender
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(m => m.SenderUser)
+                .WithMany()
+                .HasForeignKey(m => m.SenderId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(m => m.SenderBuyer)
+                .WithMany()
+                .HasForeignKey(m => m.SenderId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+
+            // Relationships for Receiver
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(m => m.ReceiverUser)
+                .WithMany()
+                .HasForeignKey(m => m.ReceiverId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(m => m.ReceiverBuyer)
+                .WithMany()
+                .HasForeignKey(m => m.ReceiverId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
 
         }
     }

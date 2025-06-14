@@ -4,6 +4,7 @@ using EbayChatBot.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EbayChatBot.API.Migrations
 {
     [DbContext(typeof(EbayChatDbContext))]
-    partial class EbayChatDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250526133853_UpdateOrderModel")]
+    partial class UpdateOrderModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -48,44 +51,6 @@ namespace EbayChatBot.API.Migrations
                     b.HasKey("BuyerId");
 
                     b.ToTable("Buyers");
-                });
-
-            modelBuilder.Entity("EbayChatBot.API.Models.ChatMessage", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ReceiverId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ReceiverType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("SenderId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SenderType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReceiverId");
-
-                    b.HasIndex("SenderId");
-
-                    b.ToTable("ChatMessages");
                 });
 
             modelBuilder.Entity("EbayChatBot.API.Models.Inquiry", b =>
@@ -216,30 +181,36 @@ namespace EbayChatBot.API.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("BuyerUserId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EbayOrderId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("PaymentMethod")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PaymentStatus")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("SellerId")
                         .HasColumnType("int");
 
                     b.Property<string>("SellerUserId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("ShippingCost")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Status")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("SubtotalAmount")
@@ -403,10 +374,6 @@ namespace EbayChatBot.API.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("EbayUsername")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -467,37 +434,6 @@ namespace EbayChatBot.API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("EbayTokens");
-                });
-
-            modelBuilder.Entity("EbayChatBot.API.Models.ChatMessage", b =>
-                {
-                    b.HasOne("EbayChatBot.API.Models.Buyer", "ReceiverBuyer")
-                        .WithMany()
-                        .HasForeignKey("ReceiverId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("EbayChatBot.API.Models.User", "ReceiverUser")
-                        .WithMany()
-                        .HasForeignKey("ReceiverId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("EbayChatBot.API.Models.Buyer", "SenderBuyer")
-                        .WithMany()
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("EbayChatBot.API.Models.User", "SenderUser")
-                        .WithMany()
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("ReceiverBuyer");
-
-                    b.Navigation("ReceiverUser");
-
-                    b.Navigation("SenderBuyer");
-
-                    b.Navigation("SenderUser");
                 });
 
             modelBuilder.Entity("EbayChatBot.API.Models.Inquiry", b =>

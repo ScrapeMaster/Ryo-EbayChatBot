@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace EbayChatBot.API.Models;
+﻿namespace EbayChatBot.API.Models;
 
 public class Buyer
 {
