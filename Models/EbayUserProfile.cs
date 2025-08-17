@@ -1,10 +1,7 @@
-﻿using System;
-
-namespace EbayChatBot.API.Models;
+﻿namespace EbayChatBot.API.Models;
 
 public class EbayUserProfile
 {
     public string userId { get; set; }
     public string email { get; set; }
-    //public string username { get; set; }
 }

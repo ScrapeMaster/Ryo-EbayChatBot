@@ -38,6 +38,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<AutomatedMessageService>();
 builder.Services.AddHttpClient<EbayOAuthService>();
 builder.Services.AddHttpClient<EbayOrderService>();
+builder.Services.AddHttpClient<EbayMessageService>();
+builder.Services.AddHttpClient<EbayItemService>();
 builder.Services.AddSignalR();
 builder.Services.AddCors(options =>
 {

@@ -37,8 +37,8 @@ namespace EbayChatBot.API.Hubs
         {
             var chat = new ChatMessage
             {
-                SenderId = int.Parse(senderId),
-                ReceiverId = int.Parse(receiverId),
+                SenderEntityId = int.Parse(senderId),
+                ReceiverEntityId = int.Parse(receiverId),
                 SenderType = senderType,
                 Message = message,
                 Timestamp = DateTime.UtcNow

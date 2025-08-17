@@ -1,5 +1,6 @@
 ﻿namespace EbayChatBot.API.Models;
 
+#nullable disable
 public class User
 {
     public int UserId { get; set; }
@@ -9,6 +10,6 @@ public class User
     public string Role { get; set; }  // Admin, Agent, etc.
     public DateTime CreatedAt { get; set; }
     public string EbayUsername { get; set; }
-    public int TeamId { get; set; }
-    public Team Team { get; set; }
+    //public int TeamId { get; set; }
+    //public Team Team { get; set; }
 }

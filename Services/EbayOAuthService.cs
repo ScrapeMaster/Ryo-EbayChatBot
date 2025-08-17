@@ -29,7 +29,7 @@ namespace EbayChatBot.API.Services
 
             var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
 
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.sandbox.ebay.com/identity/v1/oauth2/token");
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.ebay.com/identity/v1/oauth2/token");
             request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
             var body = new Dictionary<string, string>
@@ -76,7 +76,7 @@ namespace EbayChatBot.API.Services
             if (string.IsNullOrEmpty(ruName))
                 throw new ArgumentNullException(nameof(ruName), "eBay RuName is missing.");
 
-            var authorizationUrl = $"https://auth.sandbox.ebay.com/oauth2/authorize?" +
+            var authorizationUrl = $"https://auth.ebay.com/oauth2/authorize?" +
                                     $"client_id={clientId}" +
                                     $"&redirect_uri={ruName}" +
                                     $"&response_type=code" +
@@ -93,7 +93,7 @@ namespace EbayChatBot.API.Services
             {
                 var request = new HttpRequestMessage(
                     HttpMethod.Get,
-                    "https://apiz.sandbox.ebay.com/commerce/identity/v1/user/"
+                    "https://apiz.ebay.com/commerce/identity/v1/user/"
                 );
 
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -127,7 +127,7 @@ namespace EbayChatBot.API.Services
 
             var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
 
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.sandbox.ebay.com/identity/v1/oauth2/token");
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.ebay.com/identity/v1/oauth2/token");
             request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
             request.Content = new FormUrlEncodedContent(new Dictionary<string, string>

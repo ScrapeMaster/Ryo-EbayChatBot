@@ -23,10 +23,27 @@ public class ChatController : ControllerBase
     {
         var messages = await _dbContext.ChatMessages
             .Where(m =>
-                (m.SenderId == user1Id && m.ReceiverId == user2Id) ||
-                (m.SenderId == user2Id && m.ReceiverId == user1Id))
+                (m.SenderEntityId == user1Id && m.ReceiverEntityId == user2Id) ||
+                (m.SenderEntityId == user2Id && m.ReceiverEntityId == user1Id))
             .OrderBy(m => m.Timestamp)
             .ToListAsync();
+
+        return Ok(messages);
+    }
+
+    [HttpGet("{itemId}/{buyerUsername}")]
+    public async Task<IActionResult> GetMessagesForBuyer(string itemId, string buyerUsername)
+    {
+        if (string.IsNullOrWhiteSpace(itemId) || string.IsNullOrWhiteSpace(buyerUsername))
+            return BadRequest("ItemId and BuyerUsername are required.");
+
+        var messages = await _dbContext.ChatMessages
+            .Where(m => m.ItemId == itemId && m.SenderEbayUsername == buyerUsername)
+            .OrderBy(m => m.Timestamp)
+            .ToListAsync();
+
+        if (!messages.Any())
+            return NotFound("No messages found for this buyer.");
 
         return Ok(messages);
     }

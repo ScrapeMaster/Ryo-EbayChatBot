@@ -5,25 +5,24 @@
 namespace EbayChatBot.API.Migrations
 {
     /// <inheritdoc />
-    public partial class AddEbayUserProfile : Migration
+    public partial class UpdateEbayMessageModel : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
-                name: "Email",
-                table: "EbayTokens",
+                name: "ItemId",
+                table: "ChatMessages",
                 type: "nvarchar(max)",
-                nullable: false,
-                defaultValue: "");
+                nullable: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "Email",
-                table: "EbayTokens");
+                name: "ItemId",
+                table: "ChatMessages");
         }
     }
 }
