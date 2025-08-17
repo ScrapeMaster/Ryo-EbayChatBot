@@ -14,67 +14,39 @@ public class OrdersController : ControllerBase
 {
     private readonly EbayChatDbContext _context;
     private readonly AutomatedMessageService _automatedMessageService;
+    private readonly EbayOrderService _orderService;
 
     public OrdersController(
         EbayChatDbContext context,
-        AutomatedMessageService automatedMessageService
+        AutomatedMessageService automatedMessageService,
+        EbayOrderService orderService
     )
     {
         _context = context;
         _automatedMessageService = automatedMessageService;
+        _orderService = orderService;
     }
 
-    // GET: api/Orders
+    // GET: api/orders?sellerId=2
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Order>>> GetOrders()
+    public async Task<IActionResult> GetOrders([FromQuery] int sellerId)
     {
-        return await _context.Orders
+        var orders = await _context.Orders
             .Include(o => o.Buyer)
-            .Include(o => o.Seller)
             .Include(o => o.OrderItems)
+            .Where(o => o.SellerId == sellerId)
+            .Select(o => new
+            {
+                OrderId = o.OrderId,
+                EbayOrderId = o.EbayOrderId,
+                BuyerId = o.BuyerId,
+                BuyerUsername = o.Buyer != null ? o.Buyer.EbayUsername : null,
+                ItemId = o.OrderItems.Select(oi => oi.EbayItemId).FirstOrDefault()
+            })
             .ToListAsync();
+
+        return Ok(orders);
     }
-
-    // GET: api/Orders/5
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Order>> GetOrder(int id)
-    {
-        var order = await _context.Orders
-            .Include(o => o.Buyer)
-            .Include(o => o.Seller)
-            .Include(o => o.OrderItems)
-            .FirstOrDefaultAsync(o => o.OrderId == id);
-
-        if (order == null)
-        {
-            return NotFound();
-        }
-
-        return order;
-    }
-
-    // POST: api/Orders
-    [HttpPost]
-    public async Task<IActionResult> CreateOrder(OrderCreateDto dto)
-    {
-        var order = new Order
-        {
-            EbayOrderId = dto.EbayOrderId,
-            BuyerId = dto.BuyerId,
-            SellerId = dto.SellerId,
-            OrderDate = dto.OrderDate,
-            Status = dto.Status,
-            TotalAmount = dto.TotalAmount
-        };
-
-        _context.Orders.Add(order);
-        await _context.SaveChangesAsync();
-
-        // Send automated message
-        await _automatedMessageService.SendOrderPlacedMessageAsync(order.OrderId, AutomatedMessageTrigger.OrderPlaced);
-        return Ok(order);
-    }
-
 
     // PUT: api/Orders/5
     [HttpPut("{id}")]
@@ -112,6 +84,15 @@ public class OrdersController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    [HttpPost("sync")]
+    public async Task<IActionResult> SyncOrders()
+    {
+        //TODO
+        string ebayAuthToken = ""; // Replace with actual token logic
+        await _orderService.FetchAndSaveOrdersAsync(ebayAuthToken);
+        return Ok("Orders synced successfully.");
     }
 
     // POST: api/Orders/with-items

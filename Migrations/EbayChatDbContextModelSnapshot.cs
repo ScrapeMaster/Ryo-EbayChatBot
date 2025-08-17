@@ -50,6 +50,51 @@ namespace EbayChatBot.API.Migrations
                     b.ToTable("Buyers");
                 });
 
+            modelBuilder.Entity("EbayChatBot.API.Models.ChatMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ExternalMessageId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ItemId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MessageDirection")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReceiverEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReceiverType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SenderEbayUsername")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SenderEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SenderType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ChatMessages");
+                });
+
             modelBuilder.Entity("EbayChatBot.API.Models.Inquiry", b =>
                 {
                     b.Property<int>("InquiryId")
@@ -177,19 +222,35 @@ namespace EbayChatBot.API.Migrations
                     b.Property<int>("BuyerId")
                         .HasColumnType("int");
 
+                    b.Property<string>("BuyerUserId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("EbayOrderId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("PaymentMethod")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentStatus")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("SellerId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
+                    b.Property<string>("SellerUserId")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("ShippingCost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("SubtotalAmount")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
@@ -205,11 +266,14 @@ namespace EbayChatBot.API.Migrations
 
             modelBuilder.Entity("EbayChatBot.API.Models.OrderItem", b =>
                 {
-                    b.Property<int>("OrderItemId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderItemId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("EbayItemId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("OrderId")
                         .HasColumnType("int");
@@ -221,80 +285,19 @@ namespace EbayChatBot.API.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("SKU")
-                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Site")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("OrderItemId");
+                    b.HasKey("Id");
 
                     b.HasIndex("OrderId");
 
                     b.ToTable("OrderItems");
-                });
-
-            modelBuilder.Entity("EbayChatBot.API.Models.SupportTask", b =>
-                {
-                    b.Property<int>("SupportTaskId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SupportTaskId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("DueDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("InquiryId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("IssueId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("SupportTaskId");
-
-                    b.HasIndex("InquiryId");
-
-                    b.HasIndex("IssueId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("SupportTask");
-                });
-
-            modelBuilder.Entity("EbayChatBot.API.Models.Team", b =>
-                {
-                    b.Property<int>("TeamId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TeamId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("TeamName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("TeamId");
-
-                    b.ToTable("Teams");
                 });
 
             modelBuilder.Entity("EbayChatBot.API.Models.Translation", b =>
@@ -345,35 +348,67 @@ namespace EbayChatBot.API.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("EbayUsername")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Password")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Role")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("TeamId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TeamId1")
-                        .HasColumnType("int");
-
                     b.Property<string>("Username")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("UserId");
 
-                    b.HasIndex("TeamId");
-
-                    b.HasIndex("TeamId1");
-
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("EbayItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Currency")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ItemId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ListingStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PictureUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("SellerUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ViewItemUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EbayItems");
                 });
 
             modelBuilder.Entity("EbayToken", b =>
@@ -502,31 +537,6 @@ namespace EbayChatBot.API.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("EbayChatBot.API.Models.SupportTask", b =>
-                {
-                    b.HasOne("EbayChatBot.API.Models.Inquiry", "Inquiry")
-                        .WithMany()
-                        .HasForeignKey("InquiryId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("EbayChatBot.API.Models.Issue", "Issue")
-                        .WithMany()
-                        .HasForeignKey("IssueId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("EbayChatBot.API.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Inquiry");
-
-                    b.Navigation("Issue");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("EbayChatBot.API.Models.Translation", b =>
                 {
                     b.HasOne("EbayChatBot.API.Models.Inquiry", "Inquiry")
@@ -538,29 +548,9 @@ namespace EbayChatBot.API.Migrations
                     b.Navigation("Inquiry");
                 });
 
-            modelBuilder.Entity("EbayChatBot.API.Models.User", b =>
-                {
-                    b.HasOne("EbayChatBot.API.Models.Team", "Team")
-                        .WithMany()
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("EbayChatBot.API.Models.Team", null)
-                        .WithMany("Users")
-                        .HasForeignKey("TeamId1");
-
-                    b.Navigation("Team");
-                });
-
             modelBuilder.Entity("EbayChatBot.API.Models.Order", b =>
                 {
                     b.Navigation("OrderItems");
-                });
-
-            modelBuilder.Entity("EbayChatBot.API.Models.Team", b =>
-                {
-                    b.Navigation("Users");
                 });
 #pragma warning restore 612, 618
         }
