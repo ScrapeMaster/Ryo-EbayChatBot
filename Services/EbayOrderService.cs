@@ -1,27 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 using System.Xml.Linq;
 using EbayChatBot.API.Data;
 using EbayChatBot.API.Models;
+using EbayChatBot.API.Services;
 using Microsoft.EntityFrameworkCore;
 
 public class EbayOrderService
 {
     private readonly HttpClient _httpClient;
     private readonly EbayChatDbContext _dbContext;
+    private readonly EbayOAuthService _ebayOAuthService;
 
-    public EbayOrderService(HttpClient httpClient, EbayChatDbContext dbContext)
+
+    public EbayOrderService(HttpClient httpClient, EbayChatDbContext dbContext,EbayOAuthService ebayOAuthService)
     {
         _httpClient = httpClient;
         _dbContext = dbContext;
+        _ebayOAuthService = ebayOAuthService;
     }
 
-    public async Task FetchAndSaveOrdersAsync(string ebayAuthToken)
+    public async Task FetchAndSaveOrdersAsync(string ebayUserId)
     {
+        var ebayAuthToken = await _ebayOAuthService.GetValidAccessTokenAsync(ebayUserId);
         try
         {
             var ns = XNamespace.Get("urn:ebay:apis:eBLBaseComponents");

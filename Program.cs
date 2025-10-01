@@ -3,6 +3,7 @@ using EbayChatBot.API.Data; // Update this to your actual namespace
 using EbayChatBot.API.Services;
 using Microsoft.EntityFrameworkCore;
 using EbayChatBot.API.Hubs;
+using Hangfire;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Add DbContext (using SQL Server)
 builder.Services.AddDbContext<EbayChatDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+
+//builder.Services.AddHangfire(config =>
+//    config.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
+//builder.Services.AddHangfireServer();
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -50,6 +56,25 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+//app.UseHangfireDashboard("/hangfire");
+
+//RecurringJob.AddOrUpdate<EbayOrderService>(
+//    "fetch-orders-job",
+//    job => job.FetchAndSaveOrdersAsync("testUser"),
+//    "*/5 * * * *" // every 5 mins
+//);
+
+//RecurringJob.AddOrUpdate<EbayMessageService>(
+//    "fetch-messages-job",
+//    job => job.SyncMessagesAsync("testUser"),
+//    "*/10 * * * *" // every 10 mins
+//);
+
+//RecurringJob.AddOrUpdate<EbayItemService>(
+//    "fetch-items-job",
+//    job => job.GetSellerItemsAsync("testUser"),
+//    Cron.Hourly // every hour
+//);
 
 // Configure the HTTP request pipeline
 

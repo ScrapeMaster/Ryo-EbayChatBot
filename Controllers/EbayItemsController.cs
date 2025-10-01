@@ -18,27 +18,44 @@ public class EbayItemsController : ControllerBase
     }
 
     [HttpGet("sync")]
-    public async Task<IActionResult> GetSellerItems([FromHeader] string ebayAuthToken)
+    public async Task<IActionResult> GetSellerItems()
     {
-        await _ebayItemService.GetSellerItemsAsync(ebayAuthToken);
+        string ebayUserID = "f1ambe_158";
+        await _ebayItemService.GetSellerItemsAsync(ebayUserID);
         return Ok("Items fetched Successfully");
     }
 
     [HttpGet("seller/{sellerId}")]
-    public async Task<IActionResult> GetItemsBySeller(string sellerId)
+    public async Task<IActionResult> GetItemsBySeller(
+    string sellerId,
+    int pageNumber = 1,
+    int pageSize = 50,
+    string? search = null)
     {
-        if (string.IsNullOrWhiteSpace(sellerId))
-            return BadRequest("SellerID is required.");
+        var query = _dbContext.EbayItems
+            .Where(e => e.SellerUserId == sellerId);
 
-        var items = await _dbContext.EbayItems
-            .Where(e => e.SellerUserId == sellerId)
-            //.Take(100)
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(e =>
+                e.Title.Contains(search) ||
+                e.ItemId.StartsWith(search));
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(e => e.StartTime)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        if (!items.Any())
-            return NotFound($"No items found for seller {sellerId}.");
-
-        return Ok(items);
+        return Ok(new
+        {
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            Items = items
+        });
     }
-
 }

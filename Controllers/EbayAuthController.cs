@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using EbayChatBot.API.Services;
+using EbayChatBot.API.Data;
 
 namespace EbayChatBot.API.Controllers
 {
@@ -8,10 +10,13 @@ namespace EbayChatBot.API.Controllers
     public class EbayAuthController : ControllerBase
     {
         private readonly EbayOAuthService _ebayOAuthService;
+        private readonly EbayChatDbContext _ebayDbContext;
 
-        public EbayAuthController(EbayOAuthService ebayOAuthService)
+        public EbayAuthController(EbayOAuthService ebayOAuthService,
+            EbayChatDbContext ebayDbContext)
         {
             _ebayOAuthService = ebayOAuthService;
+            _ebayDbContext = ebayDbContext;
         }
 
         [HttpGet("login")]
@@ -29,9 +34,18 @@ namespace EbayChatBot.API.Controllers
 
             var tokenResponse = await _ebayOAuthService.ExchangeCodeForAccessTokenAsync(code);
 
-            // Optionally: save tokenResponse.access_token in DB or session
-            return Ok(tokenResponse);
+            return Redirect("http://localhost:8080/"); // redirect to frontend dashboard
         }
 
+
+        [HttpGet("check-connection")]
+        public async Task<IActionResult> CheckConnection()
+        {
+            // Replace with actual user identification logic
+            var userId = "f1ambe_158";
+
+            var token = await _ebayDbContext.EbayTokens.FirstOrDefaultAsync(t => t.EbayUserId == userId);
+            return Ok(new { connected = token != null });
+        }
     }
 }

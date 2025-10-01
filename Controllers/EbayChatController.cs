@@ -12,10 +12,13 @@ namespace EbayChatBot.API.Controllers;
 public class ChatController : ControllerBase
 {
     private readonly EbayChatDbContext _dbContext;
+    private readonly EbayMessageService _messageService;
 
-    public ChatController(EbayChatDbContext dbContext)
+
+    public ChatController(EbayChatDbContext dbContext, EbayMessageService messageService)
     {
         _dbContext = dbContext;
+        _messageService = messageService;
     }
 
     [HttpGet("history")]
@@ -46,5 +49,13 @@ public class ChatController : ControllerBase
             return NotFound("No messages found for this buyer.");
 
         return Ok(messages);
+    }
+
+    // Seller message to buyers
+    [HttpPost("send")]
+    public async Task<IActionResult> SendMessage([FromBody] SendMessageDto dto)
+    {
+        await _messageService.SendMessageToEbay(dto.Token, dto.ItemId, dto.BuyerUserId, dto.Body, dto.ExternalMessageId);
+        return Ok("Message sent.");
     }
 }

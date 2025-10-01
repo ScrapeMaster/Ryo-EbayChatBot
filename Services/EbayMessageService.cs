@@ -17,76 +17,9 @@ public class EbayMessageService
         _dbContext = dbContext;
     }
 
-    //public async Task SyncMessagesAsync(string ebayAuthToken)
-    //{
-    //        var xmlRequest = $@"<?xml version=""1.0"" encoding=""utf-8""?>
-    //<GetMemberMessagesRequest xmlns=""urn:ebay:apis:eBLBaseComponents"">
-    //  <RequesterCredentials>
-    //    <eBayAuthToken>{ebayAuthToken}</eBayAuthToken>
-    //  </RequesterCredentials>
-    //  <MailMessageType>All</MailMessageType>
-    //  <DetailLevel>ReturnMessages</DetailLevel>
-    //  <Pagination>
-    //    <EntriesPerPage>50</EntriesPerPage>
-    //    <PageNumber>1</PageNumber>
-    //  </Pagination>
-    //</GetMemberMessagesRequest>";
-
-    //    var request = new HttpRequestMessage(HttpMethod.Post, "https://api.sandbox.ebay.com/ws/api.dll");
-    //    request.Headers.Add("X-EBAY-API-CALL-NAME", "GetMemberMessages");
-    //    request.Headers.Add("X-EBAY-API-SITEID", "0");
-    //    request.Headers.Add("X-EBAY-API-COMPATIBILITY-LEVEL", "967");
-    //    request.Content = new StringContent(xmlRequest, Encoding.UTF8, "text/xml");
-
-    //    var response = await _httpClient.SendAsync(request);
-    //    var content = await response.Content.ReadAsStringAsync();
-    //    var doc = XDocument.Parse(content);
-    //    var ns = XNamespace.Get("urn:ebay:apis:eBLBaseComponents");
-
-    //    foreach (var msg in doc.Descendants(ns + "MemberMessageExchange"))
-    //    {
-    //        var question = msg.Element(ns + "Question");
-    //        if (question == null) continue;
-
-    //        var externalMessageId = question.Element(ns + "MessageID")?.Value;
-    //        if (_dbContext.ChatMessages.Any(m => m.ExternalMessageId == externalMessageId))
-    //            continue;
-
-    //        var sender = question.Element(ns + "SenderID")?.Value;
-    //        var text = question.Element(ns + "Body")?.Value;
-    //        var itemId = question.Element(ns + "ItemID")?.Value;
-    //        var date = DateTime.Parse(question.Element(ns + "CreationDate")?.Value ?? DateTime.UtcNow.ToString());
-
-    //        // Get seller from DB using ItemId
-    //        var orderItem = await _dbContext.OrderItems
-    //            .Include(oi => oi.Order)
-    //            .FirstOrDefaultAsync(oi => oi.Id == int.Parse(itemId));
-
-    //        if (orderItem == null || orderItem.Order == null)
-    //            continue;
-
-    //        var sellerId = orderItem.Order.SellerId;
-
-
-    //        var chat = new ChatMessage
-    //        {
-    //            ExternalMessageId = externalMessageId,
-    //            SenderEbayUsername = sender,
-    //            ReceiverEntityId = sellerId, // You can determine based on itemId or business logic
-    //            Message = text,
-    //            Timestamp = date,
-    //            MessageDirection = MessageDirection.Incoming
-    //        };
-
-    //        _dbContext.ChatMessages.Add(chat);
-    //    }
-
-    //    await _dbContext.SaveChangesAsync();
-    //}
-
-
-    public async Task SyncMessagesAsync(string ebayAuthToken)
+    public async Task SyncMessagesAsync(string ebayUserID)
     {
+        string ebayAuthToken = "";
         int pageNumber = 1;
         bool hasMoreItems = true;
         var ns = XNamespace.Get("urn:ebay:apis:eBLBaseComponents");
@@ -243,26 +176,13 @@ public class EbayMessageService
     }
 
 
-    public async Task SendMessageToEbay(string ebayAuthToken, string itemId, string buyerUserId, string messageBody,string externalMessageId)
+    public async Task SendMessageToEbay(string ebayAuthToken, string itemId, string buyerUserId, string messageBody, string externalMessageId)
     {
-        //var xmlRequest = $@"<?xml version=""1.0"" encoding=""utf-8""?>
-        //<AddMemberMessageRequest xmlns=""urn:ebay:apis:eBLBaseComponents"">
-        //  <RequesterCredentials>
-        //    <eBayAuthToken>{ebayAuthToken}</eBayAuthToken>
-        //  </RequesterCredentials>
-        //  <ItemID>{itemId}</ItemID>
-        //  <MemberMessage>
-        //    <QuestionType>General</QuestionType>
-        //    <RecipientID>{buyerUserId}</RecipientID>
-        //    <Body>{System.Security.SecurityElement.Escape(messageBody)}</Body>
-        //    <EmailCopyToSender>true</EmailCopyToSender>
-        //  </MemberMessage>
-        //</AddMemberMessageRequest>";
-
+        string ebayAuthToken2 = "v^1.1#i^1#p^3#I^3#r^0#f^0#t^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";
         var xmlRequest = $@"<?xml version=""1.0"" encoding=""utf-8""?>
         <AddMemberMessageRTQRequest xmlns=""urn:ebay:apis:eBLBaseComponents"">
           <RequesterCredentials>
-            <eBayAuthToken>{ebayAuthToken}</eBayAuthToken>
+            <eBayAuthToken>{ebayAuthToken2}</eBayAuthToken>
           </RequesterCredentials>
           <MemberMessage>
             <Body>{System.Security.SecurityElement.Escape(messageBody)}</Body>
@@ -278,8 +198,6 @@ public class EbayMessageService
         request.Headers.Add("X-EBAY-API-SITEID", "0");
         request.Headers.Add("X-EBAY-API-COMPATIBILITY-LEVEL", "967");
         request.Content = new StringContent(xmlRequest, Encoding.UTF8, "text/xml");
-
-
 
         var response = await _httpClient.SendAsync(request);
         var responseBody = await response.Content.ReadAsStringAsync();
@@ -312,11 +230,40 @@ public class EbayMessageService
             Timestamp = DateTime.UtcNow,
             MessageDirection = MessageDirection.Outgoing,
             SenderEbayUsername = buyerUserId,
-            ExternalMessageId = externalMessageId,
             ItemId = itemId
         };
 
         _dbContext.ChatMessages.Add(chat);
         await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task SendAutomateMessageAsync(string orderId, string itemId, string buyerUserId, string message)
+    {
+        string ebayAuthToken = "";
+        var xmlRequest = $@"
+        <?xml version=""1.0"" encoding=""utf-8""?>
+        <AddMemberMessageAAQToPartnerRequest xmlns=""urn:ebay:apis:eBLBaseComponents"">
+          <RequesterCredentials>
+            <eBayAuthToken>{ebayAuthToken}</eBayAuthToken>
+          </RequesterCredentials>
+          <ItemID>{itemId}</ItemID>
+          <MemberMessage>
+            <Subject>Message about your order {orderId}</Subject>
+            <Body>{message}</Body>
+            <QuestionType>General</QuestionType>
+            <RecipientID>{buyerUserId}</RecipientID>
+          </MemberMessage>
+        </AddMemberMessageAAQToPartnerRequest>";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "https://api.ebay.com/ws/api.dll");
+        request.Headers.Add("X-EBAY-API-CALL-NAME", "AddMemberMessageAAQToPartner");
+        request.Headers.Add("X-EBAY-API-SITEID", "0");
+        request.Headers.Add("X-EBAY-API-COMPATIBILITY-LEVEL", "967");
+        request.Content = new StringContent(xmlRequest, Encoding.UTF8, "text/xml");
+
+        var response = await _httpClient.SendAsync(request);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        await File.WriteAllTextAsync($"ebay_automate_response_send_message.xml", responseBody);
+        Console.WriteLine($"Saved eBay response Send Message");
     }
 }

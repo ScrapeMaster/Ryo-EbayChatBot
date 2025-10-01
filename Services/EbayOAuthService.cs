@@ -4,6 +4,8 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using EbayChatBot.API.Data;
 using EbayChatBot.API.Models;
+using Microsoft.EntityFrameworkCore;
+#nullable disable
 
 namespace EbayChatBot.API.Services
 {
@@ -22,23 +24,28 @@ namespace EbayChatBot.API.Services
             _logger = logger;
         }
 
-        public async Task<string> GetAccessTokenAsync()
+        public async Task<string> GetValidAccessTokenAsync(string ebayUserId)
         {
+            var token = await _ebayDbContext.EbayTokens.FirstOrDefaultAsync(t => t.EbayUserId == ebayUserId);
+            if (token == null) throw new Exception("User not connected to eBay");
+
+            if (token.ExpiresAt > DateTime.UtcNow)
+                return token.AccessToken;
+
+            // Refresh token
             var clientId = _configuration["EbayOAuth:ClientId"];
             var clientSecret = _configuration["EbayOAuth:ClientSecret"];
-
             var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
 
             var request = new HttpRequestMessage(HttpMethod.Post, "https://api.ebay.com/identity/v1/oauth2/token");
             request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
-
-            var body = new Dictionary<string, string>
+            request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                { "grant_type", "authorization_code" },
+                { "grant_type", "refresh_token" },
+                { "refresh_token", token.RefreshToken },
                 { "scope", "https://api.ebay.com/oauth/api_scope" }
-            };
-
-            request.Content = new FormUrlEncodedContent(body);
+            });
+            request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
 
             var response = await _httpClient.SendAsync(request);
             response.EnsureSuccessStatusCode();
@@ -46,7 +53,12 @@ namespace EbayChatBot.API.Services
             var content = await response.Content.ReadAsStringAsync();
             var tokenResponse = JsonSerializer.Deserialize<EbayTokenResponse>(content);
 
-            return tokenResponse.access_token;
+            // update DB
+            token.AccessToken = tokenResponse.access_token;
+            token.ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.expires_in);
+            await _ebayDbContext.SaveChangesAsync();
+
+            return token.AccessToken;
         }
 
 
@@ -91,39 +103,97 @@ namespace EbayChatBot.API.Services
         {
             try
             {
-                var request = new HttpRequestMessage(
-                    HttpMethod.Get,
-                    "https://apiz.ebay.com/commerce/identity/v1/user/"
-                );
+                Console.WriteLine("Getting User Profile");
+
+                var request = new HttpRequestMessage(HttpMethod.Get,
+                    "https://apiz.ebay.com/commerce/identity/v1/user/");
 
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                request.Headers.Add("X-EBAY-C-MARKETPLACE-ID", "EBAY_US");
-                Console.WriteLine($"Calling URL: {request.RequestUri}");
+
                 var response = await _httpClient.SendAsync(request);
+
+                var content = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("Raw Response: " + content);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    throw new HttpRequestException($"eBay API Error: {response.StatusCode} - {errorContent}");
+                    throw new HttpRequestException($"eBay API Error: {response.StatusCode} - {content}");
                 }
 
-                var content = await response.Content.ReadAsStringAsync();
-                var userProfile = JsonSerializer.Deserialize<EbayUserProfile>(content);
+                var userProfile = JsonSerializer.Deserialize<EbayUserProfile>(content,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                await File.WriteAllTextAsync("ebay_user_profile.json", content);
 
                 return userProfile;
             }
             catch (Exception ex)
             {
-                // Log the exception here
                 throw new ApplicationException("Failed to fetch eBay user profile", ex);
             }
         }
 
+
+        //    public async Task<string> ExchangeCodeForAccessTokenAsync(string code)
+        //    {
+        //        var clientId = _configuration["EbayOAuth:ClientId"];
+        //        var clientSecret = _configuration["EbayOAuth:ClientSecret"];
+        //        var ruName = _configuration["EbayOAuth:RuName"];
+
+        //        var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
+
+        //        var request = new HttpRequestMessage(HttpMethod.Post, "https://api.ebay.com/identity/v1/oauth2/token");
+        //        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+
+        //        request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+        //                                {
+        //                                    { "grant_type", "authorization_code" },
+        //                                    { "code", code },
+        //                                    { "redirect_uri", ruName }
+        //                                });
+
+        //        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
+        //        var response = await _httpClient.SendAsync(request);
+        //        _logger.LogInformation($"Token Response: {JsonSerializer.Serialize(response)}");
+        //        response.EnsureSuccessStatusCode();
+
+        //        var content = await response.Content.ReadAsStringAsync();
+        //        var tokenResponse = JsonSerializer.Deserialize<EbayTokenResponse>(content);
+
+        //        // Get user info
+        //        var userProfile = await GetUserProfileAsync(tokenResponse.access_token);
+
+        //        Console.WriteLine($"Passed User Profile");
+        //        // Save to DB
+        //        var token = new EbayToken
+        //        {
+        //            AccessToken = tokenResponse.access_token,
+        //            RefreshToken = tokenResponse.refresh_token,
+        //            ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.expires_in),
+        //            EbayUserId = userProfile?.userId,
+        //            Email = "test"
+        //        };
+
+        //        _ebayDbContext.EbayTokens.Add(token);
+        //        await _ebayDbContext.SaveChangesAsync();
+
+        //        return tokenResponse.access_token;
+        //    }
+
+        //}
+
         public async Task<string> ExchangeCodeForAccessTokenAsync(string code)
         {
+            if (string.IsNullOrEmpty(code))
+                throw new ArgumentException("Code cannot be null or empty", nameof(code));
+
             var clientId = _configuration["EbayOAuth:ClientId"];
             var clientSecret = _configuration["EbayOAuth:ClientSecret"];
             var ruName = _configuration["EbayOAuth:RuName"];
+
+            // Validate configuration
+            if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret) || string.IsNullOrEmpty(ruName))
+                throw new InvalidOperationException("Ebay OAuth configuration is missing");
 
             var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
 
@@ -131,45 +201,68 @@ namespace EbayChatBot.API.Services
             request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
             request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
-                                    {
-                                        { "grant_type", "authorization_code" },
-                                        { "code", code },
-                                        { "redirect_uri", "Tomoya_Nisimura-TomoyaNi-modeli-awwqzro" }
-                                    });
-
-            request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
-            var response = await _httpClient.SendAsync(request);
-            _logger.LogInformation($"Token Response: {JsonSerializer.Serialize(response)}");
-            response.EnsureSuccessStatusCode();
-
-            var content = await response.Content.ReadAsStringAsync();
-            var tokenResponse = JsonSerializer.Deserialize<EbayTokenResponse>(content);
-
-            // Get user info
-            var userProfile = await GetUserProfileAsync(tokenResponse.access_token);
-
-            // Save to DB
-            var token = new EbayToken
             {
-                AccessToken = tokenResponse.access_token,
-                RefreshToken = tokenResponse.refresh_token,
-                ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.expires_in),
-                EbayUserId = userProfile?.userId,
-                Email = "test"
-            };
+                { "grant_type", "authorization_code" },
+                { "code", code },
+                { "redirect_uri", ruName }
+            });
 
-            _ebayDbContext.EbayTokens.Add(token);
-            await _ebayDbContext.SaveChangesAsync();
+            try
+            {
+                var response = await _httpClient.SendAsync(request);
 
-            return tokenResponse.access_token;
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"Ebay token exchange failed: {response.StatusCode} - {errorContent}");
+                    response.EnsureSuccessStatusCode();
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var tokenResponse = JsonSerializer.Deserialize<EbayTokenResponse>(content);
+
+                if (tokenResponse == null || string.IsNullOrEmpty(tokenResponse.access_token))
+                    throw new InvalidOperationException("Invalid token response from Ebay");
+
+                // Get user info
+                var userProfile = await GetUserProfileAsync(tokenResponse.access_token);
+
+                // Save to DB
+                var token = new EbayToken
+                {
+                    AccessToken = tokenResponse.access_token,
+                    RefreshToken = tokenResponse.refresh_token,
+                    ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.expires_in),
+                    EbayUserId = userProfile?.username,
+                    Email = userProfile?.businessAccount?.email,
+                };
+
+                _ebayDbContext.EbayTokens.Add(token);
+                await _ebayDbContext.SaveChangesAsync();
+
+                return tokenResponse.access_token;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "HTTP request failed during Ebay token exchange");
+                throw;
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Failed to save token to database");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during Ebay token exchange");
+                throw;
+            }
         }
-
     }
-
-    public class EbayTokenResponse
-    {
-        public string access_token { get; set; }
-        public string refresh_token { get; set; }
-        public int expires_in { get; set; }
+        public class EbayTokenResponse
+        {
+            public string access_token { get; set; }
+            public string refresh_token { get; set; }
+            public int expires_in { get; set; }
+        }
     }
-}
