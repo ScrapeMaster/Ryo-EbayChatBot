@@ -106,11 +106,10 @@ public class EbayOrderService
                         {
                             seller = new User
                             {
-                                Username = sellerUserId,
+                                UserName = sellerUserId,
                                 EbayUsername = sellerUserId,
                                 Email = "seller_" + sellerUserId + "@example.com",
-                                Password = "default_hashed_password",
-                                Role = "Seller",
+                                PasswordHash = "default_hashed_password",
                                 CreatedAt = DateTime.UtcNow
                             };
                             _dbContext.Users.Add(seller);
@@ -130,7 +129,7 @@ public class EbayOrderService
                             BuyerUserId = buyerUserId,
                             SellerUserId = sellerUserId,
                             BuyerId = buyer.BuyerId,
-                            SellerId = seller.UserId,
+                            SellerId = seller.Id,
                             OrderItems = new List<OrderItem>()
                         };
 
