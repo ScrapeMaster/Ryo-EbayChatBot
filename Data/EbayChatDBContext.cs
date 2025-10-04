@@ -1,16 +1,18 @@
 ﻿using EbayChatBot.API.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace EbayChatBot.API.Data
 {
-    public class EbayChatDbContext : DbContext
+    public class EbayChatDbContext : IdentityDbContext<User, IdentityRole<int>, int>
     {
         public EbayChatDbContext(DbContextOptions<EbayChatDbContext> options) : base(options)
         {
         }
 
         // DbSet declarations
-        public DbSet<User> Users { get; set; }
+        //public DbSet<User> Users { get; set; }
         public DbSet<Buyer> Buyers { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<Inquiry> Inquiries { get; set; }

@@ -88,6 +88,7 @@ public class EbayMessageService
     public async Task SyncMessagesAsync(string ebayAuthToken)
     {
         int pageNumber = 1;
+        //string ebayAuthToken2 = "";
         bool hasMoreItems = true;
         var ns = XNamespace.Get("urn:ebay:apis:eBLBaseComponents");
 
@@ -305,7 +306,7 @@ public class EbayMessageService
         var chat = new ChatMessage
         {
             SenderType = SenderType.User,
-            SenderEntityId = seller.UserId,
+            SenderEntityId = seller.Id,
             ReceiverType = SenderType.Buyer,
             ReceiverEntityId = buyer.BuyerId,
             Message = messageBody,

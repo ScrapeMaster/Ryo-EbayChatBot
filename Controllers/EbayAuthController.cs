@@ -14,6 +14,7 @@ namespace EbayChatBot.API.Controllers
             _ebayOAuthService = ebayOAuthService;
         }
 
+        // Step 1: Redirect user to eBay login
         [HttpGet("login")]
         public IActionResult Login()
         {
@@ -21,6 +22,7 @@ namespace EbayChatBot.API.Controllers
             return Redirect(authUrl);
         }
 
+        // Step 2: eBay redirects back here with ?code=...
         [HttpGet("callback")]
         public async Task<IActionResult> Callback([FromQuery] string code)
         {
@@ -29,9 +31,15 @@ namespace EbayChatBot.API.Controllers
 
             var tokenResponse = await _ebayOAuthService.ExchangeCodeForAccessTokenAsync(code);
 
-            // Optionally: save tokenResponse.access_token in DB or session
             return Ok(tokenResponse);
         }
 
+        // Step 3 (optional): Refresh token
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] string refreshToken)
+        {
+            var newToken = await _ebayOAuthService.RefreshAccessTokenAsync(refreshToken);
+            return Ok(newToken);
+        }
     }
 }
