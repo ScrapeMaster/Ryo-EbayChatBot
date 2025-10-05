@@ -3,15 +3,11 @@ using EbayChatBot.API.Data;
 using EbayChatBot.API.Services;
 using Microsoft.EntityFrameworkCore;
 using EbayChatBot.API.Hubs;
-<<<<<<< HEAD
-using Hangfire;
-=======
 using Microsoft.AspNetCore.Identity;
 using EbayChatBot.API.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
->>>>>>> Connect_To_Ebay_Plus_Identity
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,20 +15,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<EbayChatDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-<<<<<<< HEAD
+
 
 //builder.Services.AddHangfire(config =>
 //    config.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
 //builder.Services.AddHangfireServer();
 
-=======
+
 // Add Identity
 builder.Services.AddIdentity<User, IdentityRole<int>>()
     .AddEntityFrameworkStores<EbayChatDbContext>()
     .AddDefaultTokenProviders();
 
 // Configure Serilog
->>>>>>> Connect_To_Ebay_Plus_Identity
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day)

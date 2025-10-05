@@ -36,7 +36,6 @@ namespace EbayChatBot.API.Controllers
 
             var tokenResponse = await _ebayOAuthService.ExchangeCodeForAccessTokenAsync(code);
 
-<<<<<<< HEAD
             return Redirect("http://localhost:8080/"); // redirect to frontend dashboard
         }
 
@@ -49,17 +48,6 @@ namespace EbayChatBot.API.Controllers
 
             var token = await _ebayDbContext.EbayTokens.FirstOrDefaultAsync(t => t.EbayUserId == userId);
             return Ok(new { connected = token != null });
-=======
-            return Ok(tokenResponse);
-        }
-
-        // Step 3 (optional): Refresh token
-        [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] string refreshToken)
-        {
-            var newToken = await _ebayOAuthService.RefreshAccessTokenAsync(refreshToken);
-            return Ok(newToken);
->>>>>>> Connect_To_Ebay_Plus_Identity
         }
     }
 }
