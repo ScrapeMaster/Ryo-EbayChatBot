@@ -139,13 +139,13 @@ public class OrdersController : ControllerBase
         return NoContent();
     }
 
-    [HttpPost("sync")]
-    public async Task<IActionResult> SyncOrders()
-    {
-        string ebayUserID = "f1ambe_158";
-        await _orderService.FetchAndSaveOrdersAsync(ebayUserID);
-        return Ok("Orders synced successfully.");
-    }
+    //[HttpPost("sync")]
+    //public async Task<IActionResult> SyncOrders()
+    //{
+    //    string ebayUserID = "f1ambe_158";
+    //    await _orderService.FetchAndSaveOrdersAsync(ebayUserID);
+    //    return Ok("Orders synced successfully.");
+    //}
 
     // POST: api/Orders/with-items
     [HttpPost("with-items")]

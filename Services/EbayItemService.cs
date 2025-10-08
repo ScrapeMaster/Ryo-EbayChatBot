@@ -4,21 +4,23 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using EbayChatBot.API.Data;
 using EbayChatBot.API.Models;
+using EbayChatBot.API.Services;
 
 public class EbayItemService
 {
     private readonly HttpClient _httpClient;
     private readonly EbayChatDbContext _dbContext;
+    private readonly EbayOAuthService _ebayOAuthService;
 
-    public EbayItemService(EbayChatDbContext dbContext, HttpClient httpClient)
+    public EbayItemService(EbayChatDbContext dbContext, HttpClient httpClient, EbayOAuthService ebayOAuthService)
     {
         _dbContext = dbContext;
         _httpClient = httpClient;
+        _ebayOAuthService = ebayOAuthService;
     }
 
-    public async Task GetSellerItemsAsync(string ebayUserID)
+    public async Task GetSellerItemsAsync(string ebayAuthToken)
     {
-        string ebayAuthToken = "";
         int pageNumber = 1;
         int entriesPerPage = 100;
         bool morePages = true;
@@ -107,6 +109,44 @@ public class EbayItemService
             morePages = string.Equals(hasMoreItems, "true", StringComparison.OrdinalIgnoreCase);
 
             pageNumber++;
+        }
+    }
+
+    // This will be triggered by Hangfire every hour
+    public async Task FetchItemsForAllSellersAsync()
+    {
+        // Step 1: Get all eBay usernames from AspNetUsers table
+        var allSellers = await _dbContext.Users
+            .Where(u => !string.IsNullOrEmpty(u.EbayUsername))
+            .Select(u => u.EbayUsername)
+            .ToListAsync();
+
+        if (!allSellers.Any())
+        {
+            Console.WriteLine("No sellers found with eBay usernames.");
+            return;
+        }
+
+        Console.WriteLine($"Found {allSellers.Count} sellers to fetch items for.");
+
+        // Step 2: Process each seller
+        foreach (var ebayUserId in allSellers)
+        {
+            try
+            {
+                // Step 3: Get a valid access token (refresh if expired)
+                var accessToken = await _ebayOAuthService.GetValidAccessTokenAsync(ebayUserId);
+
+                // Step 4: Fetch seller items
+                //var result = await GetSellerItemsAsync(ebayUserId, accessToken);
+                await GetSellerItemsAsync(accessToken);
+
+                Console.WriteLine($"Fetched items");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching items for {ebayUserId}: {ex.Message}");
+            }
         }
     }
 }

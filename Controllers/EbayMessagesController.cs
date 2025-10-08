@@ -19,13 +19,13 @@ public class EbayMessagesController : ControllerBase
 
 
     // Buyers inquiries to seller
-    [HttpPost("sync")]
-    public async Task<IActionResult> SyncMessages()
-    {
-        string ebayUserID = "f1ambe_158";
-        await _messageService.SyncMessagesAsync(ebayUserID);
-        return Ok("Messages synced.");
-    }
+    //[HttpPost("sync")]
+    //public async Task<IActionResult> SyncMessages()
+    //{
+    //    string ebayUserID = "f1ambe_158";
+    //    await _messageService.SyncMessagesAsync(ebayUserID);
+    //    return Ok("Messages synced.");
+    //}
 
     //// Seller message to buyers
     //[HttpPost("send")]

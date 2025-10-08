@@ -19,9 +19,8 @@ public class EbayOrderService
         _ebayOAuthService = ebayOAuthService;
     }
 
-    public async Task FetchAndSaveOrdersAsync(string ebayUserId)
+    public async Task FetchAndSaveOrdersAsync(string ebayAuthToken)
     {
-        var ebayAuthToken = await _ebayOAuthService.GetValidAccessTokenAsync(ebayUserId);
         try
         {
             var ns = XNamespace.Get("urn:ebay:apis:eBLBaseComponents");
@@ -32,6 +31,7 @@ public class EbayOrderService
             while (true)
             {
                 int pageNumber = 1;
+                int entriesPerPage = 100;
                 bool hasMoreOrders = true;
 
                 while (hasMoreOrders)
@@ -47,7 +47,7 @@ public class EbayOrderService
                       <CreateTimeFrom>{startDate:yyyy-MM-ddTHH:mm:ss}Z</CreateTimeFrom>
                       <CreateTimeTo>{endDate:yyyy-MM-ddTHH:mm:ss}Z</CreateTimeTo>
                       <Pagination>
-                        <EntriesPerPage>100</EntriesPerPage>
+                        <EntriesPerPage>{entriesPerPage}</EntriesPerPage>
                         <PageNumber>{pageNumber}</PageNumber>
                       </Pagination>
                     </GetOrdersRequest>";
@@ -175,7 +175,28 @@ public class EbayOrderService
         }
     }
 
+    public async Task SyncMessagesForAllSellersAsync()
+    {
+        var sellers = await _dbContext.Users
+            .Where(u => !string.IsNullOrEmpty(u.EbayUsername))
+            .Select(u => u.EbayUsername)
+            .ToListAsync();
 
+        foreach (var ebayUserId in sellers)
+        {
+            try
+            {
+                string ebayAuthToken = await _ebayOAuthService.GetValidAccessTokenAsync(ebayUserId);
+                await FetchAndSaveOrdersAsync(ebayAuthToken);
+
+                Console.WriteLine($"Synced messages for {ebayUserId}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error syncing messages for {ebayUserId}: {ex.Message}");
+            }
+        }
+    }
 
     // Original
     //public async Task FetchAndSaveOrdersAsync(string ebayAuthToken)

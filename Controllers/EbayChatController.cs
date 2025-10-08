@@ -55,7 +55,18 @@ public class ChatController : ControllerBase
     [HttpPost("send")]
     public async Task<IActionResult> SendMessage([FromBody] SendMessageDto dto)
     {
-        await _messageService.SendMessageToEbay(dto.Token, dto.ItemId, dto.BuyerUserId, dto.Body, dto.ExternalMessageId);
+        if (string.IsNullOrEmpty(dto.EbayUsername))
+            return BadRequest("Ebay username is required.");
+
+        var seller = await _dbContext.EbayTokens
+            .FirstOrDefaultAsync(s => s.EbayUserId == dto.EbayUsername);
+
+        if (seller == null)
+            return NotFound("Seller not found.");
+
+        if (string.IsNullOrEmpty(seller.AccessToken))
+            return BadRequest("Seller does not have a valid eBay access token.");
+        await _messageService.SendMessageToEbay(seller.AccessToken, dto.ItemId, dto.BuyerUserId, dto.Body, dto.ExternalMessageId, dto.EbayUsername);
         return Ok("Message sent.");
     }
 }

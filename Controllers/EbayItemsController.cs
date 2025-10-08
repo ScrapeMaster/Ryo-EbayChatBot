@@ -17,13 +17,13 @@ public class EbayItemsController : ControllerBase
         _dbContext = dbContext;
     }
 
-    [HttpGet("sync")]
-    public async Task<IActionResult> GetSellerItems()
-    {
-        string ebayUserID = "f1ambe_158";
-        await _ebayItemService.GetSellerItemsAsync(ebayUserID);
-        return Ok("Items fetched Successfully");
-    }
+    //[HttpGet("sync")]
+    //public async Task<IActionResult> GetSellerItems()
+    //{
+    //    string ebayUserID = "f1ambe_158";
+    //    await _ebayItemService.GetSellerItemsAsync(ebayUserID);
+    //    return Ok("Items fetched Successfully");
+    //}
 
     [HttpGet("seller/{sellerId}")]
     public async Task<IActionResult> GetItemsBySeller(

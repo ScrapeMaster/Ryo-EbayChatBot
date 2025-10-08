@@ -8,6 +8,8 @@ using EbayChatBot.API.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Hangfire;
+using Hangfire.SqlServer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,11 +17,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<EbayChatDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-
-
-//builder.Services.AddHangfire(config =>
-//    config.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
-//builder.Services.AddHangfireServer();
+// Hangfire
+builder.Services.AddHangfire(config =>
+    config.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddHangfireServer();
 
 
 // Add Identity
@@ -78,6 +79,7 @@ builder.Services.AddHttpClient<EbayOAuthService>();
 builder.Services.AddHttpClient<EbayOrderService>();
 builder.Services.AddHttpClient<EbayMessageService>();
 builder.Services.AddHttpClient<EbayItemService>();
+builder.Services.AddHangfireServer();
 
 // Register Token Service for JWT generation
 builder.Services.AddScoped<TokenService>();
@@ -86,25 +88,26 @@ builder.Services.AddScoped<TokenService>();
 builder.Services.AddSignalR();
 
 var app = builder.Build();
-//app.UseHangfireDashboard("/hangfire");
+app.UseHangfireDashboard("/hangfire");
 
-//RecurringJob.AddOrUpdate<EbayOrderService>(
-//    "fetch-orders-job",
-//    job => job.FetchAndSaveOrdersAsync("testUser"),
-//    "*/5 * * * *" // every 5 mins
-//);
+RecurringJob.AddOrUpdate<EbayOrderService>(
+    "fetch-orders-job",
+    job => job.SyncMessagesForAllSellersAsync(),
+    "*/5 * * * *" // every 5 mins
+);
 
-//RecurringJob.AddOrUpdate<EbayMessageService>(
-//    "fetch-messages-job",
-//    job => job.SyncMessagesAsync("testUser"),
-//    "*/10 * * * *" // every 10 mins
-//);
+RecurringJob.AddOrUpdate<EbayMessageService>(
+    "fetch-messages-job",
+    job => job.SyncMessagesForAllSellersAsync(),
+    "*/10 * * * *" // every 10 mins
+);
 
-//RecurringJob.AddOrUpdate<EbayItemService>(
-//    "fetch-items-job",
-//    job => job.GetSellerItemsAsync("testUser"),
-//    Cron.Hourly // every hour
-//);
+// Fetch all ebay User's items
+RecurringJob.AddOrUpdate<EbayItemService>(
+    "fetch-items-job",
+    job => job.FetchItemsForAllSellersAsync(),
+    Cron.Hourly
+);
 
 // Configure pipeline
 if (app.Environment.IsDevelopment())

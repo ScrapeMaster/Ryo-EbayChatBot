@@ -4,24 +4,26 @@ using System.Text;
 using System.Xml.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
+using EbayChatBot.API.Services;
 
 
 public class EbayMessageService
 {
     private readonly HttpClient _httpClient;
     private readonly EbayChatDbContext _dbContext;
+    private readonly EbayOAuthService _ebayOAuthService;
 
-    public EbayMessageService(HttpClient httpClient, EbayChatDbContext dbContext)
+    public EbayMessageService(HttpClient httpClient, EbayChatDbContext dbContext, EbayOAuthService ebayOAuthService)
     {
         _httpClient = httpClient;
         _dbContext = dbContext;
+        _ebayOAuthService = ebayOAuthService;
     }
 
-    public async Task SyncMessagesAsync(string ebayUserID)
+    private async Task SyncMessagesAsync(string ebayAuthToken)
     {
-        string ebayAuthToken = "";
         int pageNumber = 1;
-        //string ebayAuthToken2 = "";
+        int entriesPerPage = 100;
         bool hasMoreItems = true;
         var ns = XNamespace.Get("urn:ebay:apis:eBLBaseComponents");
 
@@ -37,7 +39,7 @@ public class EbayMessageService
                                   <MailMessageType>All</MailMessageType>
                                   <DetailLevel>ReturnMessages</DetailLevel>
                                   <Pagination>
-                                    <EntriesPerPage>50</EntriesPerPage>
+                                    <EntriesPerPage>{entriesPerPage}</EntriesPerPage>
                                     <PageNumber>{pageNumber}</PageNumber>
                                   </Pagination>
                                 </GetMemberMessagesRequest>";
@@ -176,14 +178,12 @@ public class EbayMessageService
         Console.WriteLine("All pages fetched. All new messages saved successfully.");
     }
 
-
-    public async Task SendMessageToEbay(string ebayAuthToken, string itemId, string buyerUserId, string messageBody, string externalMessageId)
+    public async Task SendMessageToEbay(string ebayAuthToken, string itemId, string buyerUserId, string messageBody, string externalMessageId, string ebayUsername)
     {
-        string ebayAuthToken2 = "v^1.1#i^1#p^3#I^3#r^0#f^0#t^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";
         var xmlRequest = $@"<?xml version=""1.0"" encoding=""utf-8""?>
         <AddMemberMessageRTQRequest xmlns=""urn:ebay:apis:eBLBaseComponents"">
           <RequesterCredentials>
-            <eBayAuthToken>{ebayAuthToken2}</eBayAuthToken>
+            <eBayAuthToken>{ebayAuthToken}</eBayAuthToken>
           </RequesterCredentials>
           <MemberMessage>
             <Body>{System.Security.SecurityElement.Escape(messageBody)}</Body>
@@ -212,7 +212,7 @@ public class EbayMessageService
         }
 
         // Lookup seller and buyer IDs
-        var seller = await _dbContext.Users.FirstOrDefaultAsync(u => u.EbayUsername == "f1ambe_158");
+        var seller = await _dbContext.Users.FirstOrDefaultAsync(u => u.EbayUsername == ebayUsername);
         var buyer = await _dbContext.Buyers.FirstOrDefaultAsync(b => b.EbayUsername == buyerUserId);
 
         if (seller == null)
@@ -266,5 +266,28 @@ public class EbayMessageService
         var responseBody = await response.Content.ReadAsStringAsync();
         await File.WriteAllTextAsync($"ebay_automate_response_send_message.xml", responseBody);
         Console.WriteLine($"Saved eBay response Send Message");
+    }
+
+    public async Task SyncMessagesForAllSellersAsync()
+    {
+        var sellers = await _dbContext.Users
+            .Where(u => !string.IsNullOrEmpty(u.EbayUsername))
+            .Select(u => u.EbayUsername)
+            .ToListAsync();
+
+        foreach (var ebayUserId in sellers)
+        {
+            try
+            {
+                string ebayAuthToken = await _ebayOAuthService.GetValidAccessTokenAsync(ebayUserId);
+                await SyncMessagesAsync(ebayAuthToken);
+
+                Console.WriteLine($"Synced messages for {ebayUserId}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error syncing messages for {ebayUserId}: {ex.Message}");
+            }
+        }
     }
 }

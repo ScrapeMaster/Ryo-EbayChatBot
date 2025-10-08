@@ -36,17 +36,14 @@ namespace EbayChatBot.API.Controllers
 
             var tokenResponse = await _ebayOAuthService.ExchangeCodeForAccessTokenAsync(code);
 
-            return Redirect("http://localhost:8080/"); // redirect to frontend dashboard
+            return Redirect("http://localhost:8080/dashboard"); // redirect to frontend dashboard
         }
 
 
         [HttpGet("check-connection")]
-        public async Task<IActionResult> CheckConnection()
+        public async Task<IActionResult> CheckConnection([FromQuery] string username)
         {
-            // Replace with actual user identification logic
-            var userId = "f1ambe_158";
-
-            var token = await _ebayDbContext.EbayTokens.FirstOrDefaultAsync(t => t.EbayUserId == userId);
+            var token = await _ebayDbContext.EbayTokens.FirstOrDefaultAsync(t => t.EbayUserId == username);
             return Ok(new { connected = token != null });
         }
     }

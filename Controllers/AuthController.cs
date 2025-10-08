@@ -7,6 +7,10 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using static EbayChatBot.API.DTOs.loginSignUpDto;
+using EbayChatBot.API.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
+using EbayChatBot.API.Data;
 
 namespace EbayChatBot.API.Controllers
 {
@@ -17,12 +21,16 @@ namespace EbayChatBot.API.Controllers
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly IConfiguration _config;
+        private readonly EbayChatDbContext _dbContext;
+        private readonly EbayOAuthService _ebayOAuthService;
 
-        public AuthController(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration config)
+        public AuthController(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration config, EbayChatDbContext dbContext, EbayOAuthService ebayOAuthService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _config = config;
+            _dbContext = dbContext;
+            _ebayOAuthService = ebayOAuthService;
         }
 
         // POST: api/auth/register
@@ -34,9 +42,9 @@ namespace EbayChatBot.API.Controllers
 
             var user = new User
             {
-                UserName = dto.Email,
+                UserName = dto.FirstName + dto.LastName,
                 Email = dto.Email,
-                EbayUsername = dto.FirstName + dto.LastName,
+                EbayUsername = dto.EbayUserName,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -69,13 +77,52 @@ namespace EbayChatBot.API.Controllers
             });
         }
 
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            // 1. Get current user
+            var ebayUsername = User.Identity?.Name;
+
+            var seller = await _dbContext.EbayTokens
+                .FirstOrDefaultAsync(x => x.EbayUserId == ebayUsername);
+
+            if (seller != null && !string.IsNullOrEmpty(seller.AccessToken))
+            {
+                try
+                {
+                    await _ebayOAuthService.RevokeTokenAsync(seller.AccessToken);
+                }
+                catch (Exception ex)
+                {
+                    // Log error but don't block logout
+                    Console.WriteLine($"Error revoking token: {ex.Message}");
+                }
+
+                // Clear token from DB / cache
+                seller.AccessToken = null;
+                await _dbContext.SaveChangesAsync();
+            }
+
+            // Notify background service to stop polling
+            //_backgroundService.StopPollingForSeller(ebayUsername);
+
+            return Ok("Logged out successfully.");
+        }
         private string GenerateJwtToken(User user)
         {
+            //var claims = new[]
+            //{
+            //    new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+            //    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            //    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+            //};
+
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+               new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+               new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+               new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+               new Claim(ClaimTypes.Name, user.Email) // 👈 Add this line
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
