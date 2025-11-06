@@ -2,7 +2,7 @@
 
 public class MessageTemplateDto
 {
-    public string Title { get; set; }
-    public string Content { get; set; }
-    public int UserId { get; set; }  // Seller ID
+    public int UserId { get; set; }
+    public string Title { get; set; } = "";
+    public string Content { get; set; } = "";
 }

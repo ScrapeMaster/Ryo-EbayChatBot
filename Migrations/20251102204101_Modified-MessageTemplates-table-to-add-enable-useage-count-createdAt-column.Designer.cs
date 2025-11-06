@@ -4,6 +4,7 @@ using EbayChatBot.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EbayChatBot.API.Migrations
 {
     [DbContext(typeof(EbayChatDbContext))]
-    partial class EbayChatDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251102204101_Modified-MessageTemplates-table-to-add-enable-useage-count-createdAt-column")]
+    partial class ModifiedMessageTemplatestabletoaddenableuseagecountcreatedAtcolumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -17,16 +17,31 @@ public class MessageTemplatesController : ControllerBase
         _context = context;
     }
 
-    // GET: api/MessageTemplates?userId=1
+    // GET: api/MessageTemplates?userId=1&search=abc&sort=title
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<MessageTemplate>>> GetTemplates([FromQuery] int userId)
+    public async Task<ActionResult<IEnumerable<MessageTemplate>>> GetTemplates(
+        [FromQuery] int userId,
+        [FromQuery] string? search,
+        [FromQuery] string? sort = "createdAt"
+    )
     {
-        return await _context.MessageTemplates
-            .Where(t => t.UserId == userId)
-            .ToListAsync();
+        var query = _context.MessageTemplates.Where(t => t.UserId == userId);
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            query = query.Where(t => t.Title.Contains(search));
+        }
+
+        query = sort switch
+        {
+            "title" => query.OrderBy(t => t.Title),
+            "createdAt" => query.OrderByDescending(t => t.CreatedAt),
+            _ => query
+        };
+
+        return await query.ToListAsync();
     }
 
-    // GET: api/MessageTemplates/5
     [HttpGet("{id}")]
     public async Task<ActionResult<MessageTemplate>> GetTemplate(int id)
     {
@@ -35,7 +50,6 @@ public class MessageTemplatesController : ControllerBase
         return template;
     }
 
-    // POST: api/MessageTemplates
     [HttpPost]
     public async Task<ActionResult<MessageTemplate>> CreateTemplate(MessageTemplateDto dto)
     {
@@ -43,7 +57,8 @@ public class MessageTemplatesController : ControllerBase
         {
             Title = dto.Title,
             Content = dto.Content,
-            UserId = dto.UserId
+            UserId = dto.UserId,
+            CreatedAt = DateTime.UtcNow
         };
 
         _context.MessageTemplates.Add(template);
@@ -52,7 +67,6 @@ public class MessageTemplatesController : ControllerBase
         return CreatedAtAction(nameof(GetTemplate), new { id = template.Id }, template);
     }
 
-    // PUT: api/MessageTemplates/5
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTemplate(int id, MessageTemplateDto dto)
     {
@@ -61,12 +75,12 @@ public class MessageTemplatesController : ControllerBase
 
         template.Title = dto.Title;
         template.Content = dto.Content;
+        template.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return NoContent();
     }
 
-    // DELETE: api/MessageTemplates/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTemplate(int id)
     {
@@ -77,5 +91,31 @@ public class MessageTemplatesController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    [HttpPatch("{id}/toggle")]
+    public async Task<IActionResult> ToggleEnabled(int id)
+    {
+        var template = await _context.MessageTemplates.FindAsync(id);
+        if (template == null) return NotFound();
+
+        template.IsEnabled = !template.IsEnabled;
+        template.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(template);
+    }
+
+    [HttpPatch("{id}/usage")]
+    public async Task<IActionResult> IncrementUsage(int id)
+    {
+        var template = await _context.MessageTemplates.FindAsync(id);
+        if (template == null) return NotFound();
+
+        template.UsageCount += 1;
+        template.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(template);
     }
 }

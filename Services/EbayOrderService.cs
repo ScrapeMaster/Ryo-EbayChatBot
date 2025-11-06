@@ -10,13 +10,18 @@ public class EbayOrderService
     private readonly HttpClient _httpClient;
     private readonly EbayChatDbContext _dbContext;
     private readonly EbayOAuthService _ebayOAuthService;
+    private readonly EbayMessageService _ebayMessageService;
 
 
-    public EbayOrderService(HttpClient httpClient, EbayChatDbContext dbContext,EbayOAuthService ebayOAuthService)
+    public EbayOrderService(HttpClient httpClient,
+           EbayChatDbContext dbContext,
+           EbayOAuthService ebayOAuthService,
+           EbayMessageService ebayMessageService)
     {
         _httpClient = httpClient;
         _dbContext = dbContext;
         _ebayOAuthService = ebayOAuthService;
+        _ebayMessageService = ebayMessageService;
     }
 
     public async Task FetchAndSaveOrdersAsync(string ebayAuthToken)
@@ -148,6 +153,29 @@ public class EbayOrderService
                             order.OrderItems.Add(orderItem);
                         }
 
+                        //Send the order confirmation message.
+                        try
+                        {
+                            string messageBody = $"Hello {buyer.EbayUsername}, thank you for your purchase! " +
+                                 $"Your order {order.EbayOrderId} has been received and is being processed.";
+
+                            await _ebayMessageService.SendMessageToEbay(
+                                ebayAuthToken,
+                                order.OrderItems.FirstOrDefault()?.EbayItemId ?? "",
+                                buyer.EbayUsername,
+                                messageBody,
+                                string.Empty,
+                                seller.EbayUsername
+                            );
+
+                            Console.WriteLine($"✅ Order confirmation sent to {buyer.EbayUsername} for {order.EbayOrderId}");
+                        }
+                        catch(Exception ex)
+                        {
+                            string message = "Something went wrong while sending the order confirmation message" + ex.Message;
+                            Console.WriteLine($"⚠️ Failed to send confirmation: {ex.Message}");
+                        }
+                        
                         _dbContext.Orders.Add(order);
                     }
 
@@ -175,11 +203,11 @@ public class EbayOrderService
         }
     }
 
-    public async Task SyncMessagesForAllSellersAsync()
+    public async Task SyncOrdersForAllSellersAsync()
     {
         var sellers = await _dbContext.Users
             .Where(u => !string.IsNullOrEmpty(u.EbayUsername))
-            .Select(u => u.EbayUsername)
+            .Select(u => u.EbayUsername).AsNoTracking()
             .ToListAsync();
 
         foreach (var ebayUserId in sellers)

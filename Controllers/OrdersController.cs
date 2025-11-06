@@ -60,6 +60,50 @@ public class OrdersController : ControllerBase
     }
 
 
+    [HttpGet("orders-with-ebay-items")]
+    public async Task<IActionResult> GetOrdersWithEbayItems()
+    {
+        try
+        {
+            var result = await (from oi in _context.OrderItems
+                                join o in _context.Orders
+                                    on oi.OrderId equals o.OrderId
+                                join ei in _context.EbayItems
+                                    on oi.EbayItemId equals ei.ItemId into eiGroup
+                                from ei in eiGroup.DefaultIfEmpty()
+                                orderby o.OrderDate descending
+                                select new
+                                {
+                                    oi.Id,
+                                    oi.EbayItemId,
+                                    oi.Title,
+                                    oi.Quantity,
+                                    oi.Price,
+                                    oi.Site,
+                                    oi.SKU,
+                                    oi.OrderId,
+                                    o.EbayOrderId,
+                                    o.BuyerId,
+                                    o.SellerId,
+                                    o.OrderDate,
+                                    o.Status,
+                                    o.TotalAmount,
+                                    o.PaymentStatus,
+                                    o.PaymentMethod,
+                                    EbayItem = ei
+                                })
+                                .ToListAsync();
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ ERROR: {ex.Message}");
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+
     // GET: api/Orders/5
     //[HttpGet("{id}")]
     //public async Task<ActionResult<Order>> GetOrder(int id)

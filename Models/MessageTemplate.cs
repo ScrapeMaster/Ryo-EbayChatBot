@@ -8,6 +8,8 @@ public class MessageTemplate
     public string Title { get; set; }
     public string Content { get; set; }
     public DateTime CreatedAt { get; set; }
-
+    public DateTime? UpdatedAt { get; set; }
+    public bool IsEnabled { get; set; } = true;
+    public int UsageCount { get; set; } = 0;
     public User User { get; set; }
 }
